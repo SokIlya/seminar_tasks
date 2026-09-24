@@ -2,6 +2,26 @@
 
 #include "field_generation.h"
 
+bool has_open_neighbor(field &visible, int row, int column) {
+    return (row > 0 &&
+            visible.cells[row - 1][column] != UNKNOWN_CELL) ||
+           (row < BOARD_SIZE - 1 &&
+            visible.cells[row + 1][column] != UNKNOWN_CELL) ||
+           (column > 0 &&
+            visible.cells[row][column - 1] != UNKNOWN_CELL) ||
+           (column < BOARD_SIZE - 1 &&
+            visible.cells[row][column + 1] != UNKNOWN_CELL);
+}
+
+void print_field(field &visible) {
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            std::cout << visible.cells[i][j];
+        }
+        std::cout << "\n";
+    }
+}
+
 int main() {
     field visible;
     field hidden;
@@ -13,67 +33,65 @@ int main() {
 
     generate_fields(visible, hidden, hidden_view);
 
-    std::cout << "field\n";
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            std::cout << visible.cells[i][j];
+    std::cout << "Input format: row column\n";
+    std::cout << "Values: 0 to " << BOARD_SIZE - 1 << "\n\n";
+
+    while (true) {
+        print_field(visible);
+        std::cout << "Valid cells:";
+
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (visible.cells[i][j] == UNKNOWN_CELL &&
+                    has_open_neighbor(visible, i, j)) {
+                    std::cout << " (" << i << " " << j << ")";
+                }
+            }
         }
-        std::cout << "\n";
-    }
 
-    std::cout << "\nfield_hidden\n";
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            std::cout << hidden.cells[i][j];
+        int row;
+        int column;
+
+        std::cout << "\nEnter cell: ";
+        std::cin >> row >> column;
+
+        if (row < 0 || row >= BOARD_SIZE ||
+            column < 0 || column >= BOARD_SIZE ||
+            visible.cells[row][column] != UNKNOWN_CELL ||
+            !has_open_neighbor(visible, row, column)) {
+            std::cout << "Invalid input.\n\n";
+            continue;
         }
-        std::cout << "\n";
-    }
 
-    std::cout << "\nfield_hidden_view\n";
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            std::cout << hidden_view.cells[i][j];
-        }
-        std::cout << "\n";
-    }
-
-    int center = BOARD_SIZE / 2;
-
-    int move_rows[16] = {
-        center - 1, center - 2, center - 2, center - 2,
-        center - 2, center - 2, center - 1, center,
-        center + 1, center + 2, center + 2, center + 2,
-        center + 2, center + 2, center + 1, center
-    };
-
-    int move_columns[16] = {
-        center - 2, center - 2, center - 1, center,
-        center + 1, center + 2, center + 2, center + 2,
-        center + 2, center + 2, center + 1, center,
-        center - 1, center - 2, center - 2, center - 2
-    };
-
-    int opened_cells = 0;
-
-    for (int i = 0; i < 16; i++) {
-        bool result = visible.check_position(
-            move_rows[i], move_columns[i], hidden, hidden_view);
+        bool result =
+            visible.check_position(row, column, hidden, hidden_view);
 
         if (result == false) {
-            std::cout << "\nmine_result: " << result << "\n";
+            visible.cells[row][column] = MINE;
+            print_field(visible);
+            std::cout << "Mine check: " << result << "\n";
+            std::cout << "You lost.\n";
             break;
         }
 
-        opened_cells++;
-    }
+        bool safe_move_exists = false;
 
-    std::cout << "opened_cells: " << opened_cells << "\n";
-    std::cout << "field_after_moves\n";
-
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            std::cout << visible.cells[i][j];
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (visible.cells[i][j] == UNKNOWN_CELL &&
+                    hidden.cells[i][j] == FREE_CELL &&
+                    has_open_neighbor(visible, i, j)) {
+                    safe_move_exists = true;
+                }
+            }
         }
+
+        if (safe_move_exists == false) {
+            print_field(visible);
+            std::cout << "You won.\n";
+            break;
+        }
+
         std::cout << "\n";
     }
 
