@@ -55,6 +55,17 @@ int main() {
         std::cout << "\nEnter cell: ";
         std::cin >> row >> column;
 
+        if (std::cin.fail()) {
+            if (std::cin.eof()) {
+                return 0;
+            }
+
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            std::cout << "Invalid input.\n\n";
+            continue;
+        }
+
         if (row < 0 || row >= BOARD_SIZE ||
             column < 0 || column >= BOARD_SIZE ||
             visible.cells[row][column] != UNKNOWN_CELL ||
@@ -74,19 +85,18 @@ int main() {
             break;
         }
 
-        bool safe_move_exists = false;
+        bool safe_cell_exists = false;
 
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (visible.cells[i][j] == UNKNOWN_CELL &&
-                    hidden.cells[i][j] == FREE_CELL &&
-                    has_open_neighbor(visible, i, j)) {
-                    safe_move_exists = true;
+                    hidden.cells[i][j] == FREE_CELL) {
+                    safe_cell_exists = true;
                 }
             }
         }
 
-        if (safe_move_exists == false) {
+        if (safe_cell_exists == false) {
             print_field(visible);
             std::cout << "You won.\n";
             break;
